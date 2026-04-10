@@ -239,6 +239,10 @@ STM32CubeIDE 프로그램으로 돌아와 `main.c` 파일 내부 루프 안에 �
 *   **푸시버튼 (5개):** 스위치의 한쪽 다리는 핀번호에 맞게 STM32 보드에 연결하고, 반대쪽 다리는 브레드보드의 `GND` 구역에 묶어 버튼을 누를 때 입력이 L(Low)로 떨어지도록 구성하였다.
 *   **상태 표시 LED (5개):** 다리가 긴 양극(+)은 330Ω 저항을 거쳐 STM32의 지정된 출력 핀에 연결하고, 짧은 음극(-)은 `GND`로 공통 연결하여 안정적으로 발광하도록 하였다.
 
+  <div align="center"><img width="1527" height="1531" alt="image" src="https://github.com/user-attachments/assets/aa444ab3-3afd-4b70-ab26-1ef3bd1de70d" /></div>
+  
+
+
 **2. STM32CubeMX 핀(Pinout) 매핑 및 속성 요약표**
 
 설계한 5가지 다중 동작을 하드웨어와 완벽하게 1:1로 매칭시키기 위해, 프로젝트 `.ioc` 파일에서 다음과 같이 핀들을 활성화하고 세부 옵션을 설정하였다. 모터 제어 핀은 실험 1부터 이어온 설정을 그대로 유지한다.
@@ -262,6 +266,10 @@ STM32CubeIDE 프로그램으로 돌아와 `main.c` 파일 내부 루프 안에 �
 > [!TIP]
 > * **입력 핀 Pull-up 설정:** 브레드보드에 별도의 외부 풀업 저항을 달지 않아도, 핀 내부의 저항을 활성화하여 버튼이 눌리지 않았을 때 플로팅(노이즈) 현상을 막고 안정적인 HIGH(1) 상태를 유지할 수 있다.
 > * **출력 핀 Low 시작 설정:** 메인 `while` 루프 진입 전에 모든 모드가 정지해 있는 "상태 0"부터 맞이하게 되므로 초기 LED 불을 모두 깔끔하게 꺼두는 용도이다.
+
+  <div align="center"><img width="2879" height="1707" alt="image" src="https://github.com/user-attachments/assets/139d557a-568b-4967-bf41-45bbb490c84f" /></div>
+
+
 
 ### 5-2. `HAL_GetTick()` 기반의 '상태 머신(State Machine)' 설계
 기존의 `HAL_Delay()`를 전면 배제하고, `HAL_GetTick()` 타이머를 기준으로 현재의 동작 상태(`current_mode`)만 집중 관리하는 형태로 루프를 업그레이드하였다. 이를 통해 모터가 돌아가고 있는 긴 시간 동안에도 사용자가 순간적으로 5개 중 다른 버튼을 누르면, **기다림이나 딜레이 없이 즉각적으로 모드가 전환**되는 압도적인 반응성을 확보하였다.
@@ -398,7 +406,29 @@ STM32CubeIDE 프로그램 `main.c` 내부의 초기화 영역과 무한 루프(`
     HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, led_states[4] ? GPIO_PIN_SET : GPIO_PIN_RESET);
   /* USER CODE END 3 */
 ```
+### 5-4. 동작 영상
 
-### 5-4. 최종 고찰
+### 버튼 1
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/0f384eaa-341d-422d-9b05-b344ba02dedd" controls width="600"></video>
+</div>
+
+### 버튼 2
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/577c22e4-ed2d-4bd1-9839-c1d39716b647" controls width="600"></video>
+</div>
+
+### 버튼 3
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/60212839-4399-4ba9-a7a8-75bc3c1e4b0e" controls width="600"></video>
+</div>
+
+### 버튼 4,5
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/601ed292-7c31-4fb8-b2e4-2bcef8c31498" controls width="600"></video>
+</div>
+
+
+### 5-5. 최종 고찰
 * **타이머 상태(State) 제어의 진가:** 멈춤(Delay) 함수가 초래하는 치명적 블로킹 병목을 해소하고, `HAL_GetTick()`을 중심으로 메인 루프가 막힘없이 무한대로 회전(Sweeping)하며 모든 입출력을 동시에 감시/관리해내는 임베디드 상급 알고리즘의 좋은 예시가 되었다.
 * **물리적 오차와 소프트웨어 튜닝:** 정확한 회구동(3초 왕복 및 1바퀴)을 구현하기 위해 모터 드라이버(L298N)와 모터 내부 브러시/오차 기계적 한계를 코드 내부의 `one_rotation_ms` 변수값을 튜닝하는 과정을 거쳤으며, 이를 통해 하드웨어의 미세 오차를 소프트웨어적인 파라미터로 상쇄해낼 수 있음을 입증하였다.
