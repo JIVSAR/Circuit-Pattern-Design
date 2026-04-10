@@ -239,22 +239,29 @@ STM32CubeIDE 프로그램으로 돌아와 `main.c` 파일 내부 루프 안에 �
 *   **푸시버튼 (5개):** 스위치의 한쪽 다리는 핀번호에 맞게 STM32 보드에 연결하고, 반대쪽 다리는 브레드보드의 `GND` 구역에 묶어 버튼을 누를 때 입력이 L(Low)로 떨어지도록 구성하였다.
 *   **상태 표시 LED (5개):** 다리가 긴 양극(+)은 330Ω 저항을 거쳐 STM32의 지정된 출력 핀에 연결하고, 짧은 음극(-)은 `GND`로 공통 연결하여 안정적으로 발광하도록 하였다.
 
-**2. STM32CubeMX 핀(Pinout) 상세 설정**
-프로젝트 .ioc 파일에서 다음과 같이 핀들을 대거 추가 활성화하고 속성을 일괄 설정하였다.
-*   **버튼 입력 핀 (`GPIO_Input`):**
-    *   사용 핀: `PE12`, `PE14`, `PB10`, `PB12`, `PB14`
-    *   설정 팁: `System Core ➔ GPIO` 설정에서 모두 `Pull-up` 모드로 지정하여 대기 중일 때 HIGH 상태를 안정적으로 유지시켜 플로팅 현상을 방지하였다.
-*   **LED 출력 핀 (`GPIO_Output`):**
-    *   사용 핀: `PA6`, `PC4`, `PB0`, `PB2`, `PE8` (직관적 매핑을 위해 버튼 배열 위치와 1:1 대응)
-    *   설정 팁: 기본 `Output Push Pull` 방식으로 설정하고, 초기 레벨(GPIO Output Level)은 `Low`로 지정하여 시작 시 LED가 꺼진 상태로 두었다.
+**2. STM32CubeMX 핀(Pinout) 매핑 및 속성 요약표**
 
-**3. 기능별 버튼-LED 1:1 매핑 규칙**
-버튼과 LED, 기능이 한 번호에 같이 맞물려 작동되도록 지정한 규칙은 다음과 같다.
-* 1번 (Btn: PE12 / LED: PA6) : 3초간 정/역회전 사이클 무한 반복 (동작 중 LED는 1초 주기로 점멸)
-* 2번 (Btn: PE14 / LED: PC4) : 무한 정회전 (동작 중 점등 유지)
-* 3번 (Btn: PB10 / LED: PB0) : 무한 역회전 (동작 중 점등 유지)
-* 4번 (Btn: PB12 / LED: PB2) : 정방향 딱 1바퀴 돌고 자동 정지 (동작 중 점등 유지)
-* 5번 (Btn: PB14 / LED: PE8) : 역방향 딱 1바퀴 돌고 자동 정지 (동작 중 점등 유지)
+설계한 5가지 다중 동작을 하드웨어와 완벽하게 1:1로 매칭시키기 위해, 프로젝트 `.ioc` 파일에서 다음과 같이 핀들을 활성화하고 세부 옵션을 설정하였다. 모터 제어 핀은 실험 1부터 이어온 설정을 그대로 유지한다.
+
+| 기구/부품 | 핀 번호 | 설정 모드(Mode) | 상세 설정 (Configuration) | 구현된 매핑 기능 |
+| :-- | :---: | :--- | :--- | :--- |
+| **모터 정방향** | `PA0` | `GPIO_Output` | Output Push Pull, No pull | 모터 드라이버 IN1 신호 출력 |
+| **모터 역방향** | `PA1` | `GPIO_Output` | Output Push Pull, No pull | 모터 드라이버 IN2 신호 출력 |
+| **모터 속도 제어**| `PA5` | `TIM2_CH1` | PWM Generation CH1 (`ARR`=999, `PSC`=199) | L298N ENA 포트에 속도 50% PWM 출력 |
+| **푸시버튼 1** | `PE12` | `GPIO_Input` | **Pull-up** (내부 풀업 저항 켬) | 3초간 정/역회전 사이클 무한 돌입 |
+| **푸시버튼 2** | `PE14` | `GPIO_Input` | **Pull-up** (내부 풀업 저항 켬) | 무한 정회전 진입 |
+| **푸시버튼 3** | `PB10` | `GPIO_Input` | **Pull-up** (내부 풀업 저항 켬) | 무한 역회전 진입 |
+| **푸시버튼 4** | `PB12` | `GPIO_Input` | **Pull-up** (내부 풀업 저항 켬) | 정방향으로 딱 1바퀴 회전 후 정지 |
+| **푸시버튼 5** | `PB14` | `GPIO_Input` | **Pull-up** (내부 풀업 저항 켬) | 역방향으로 딱 1바퀴 회전 후 정지 |
+| **상태 LED 1** | `PA6` | `GPIO_Output` | Output Level **Low** (시작 시 소등) | 1번 기능 수행 시 1초 주기로 점멸 |
+| **상태 LED 2** | `PC4` | `GPIO_Output` | Output Level **Low** (시작 시 소등) | 2번 기능 수행 동안 점등 유지 |
+| **상태 LED 3** | `PB0` | `GPIO_Output` | Output Level **Low** (시작 시 소등) | 3번 기능 수행 동안 점등 유지 |
+| **상태 LED 4** | `PB2` | `GPIO_Output` | Output Level **Low** (시작 시 소등) | 4번 기능 수행 동안 점등 유지 |
+| **상태 LED 5** | `PE8` | `GPIO_Output` | Output Level **Low** (시작 시 소등) | 5번 기능 수행 동안 점등 유지 |
+
+> [!TIP]
+> * **입력 핀 Pull-up 설정:** 브레드보드에 별도의 외부 풀업 저항을 달지 않아도, 핀 내부의 저항을 활성화하여 버튼이 눌리지 않았을 때 플로팅(노이즈) 현상을 막고 안정적인 HIGH(1) 상태를 유지할 수 있다.
+> * **출력 핀 Low 시작 설정:** 메인 `while` 루프 진입 전에 모든 모드가 정지해 있는 "상태 0"부터 맞이하게 되므로 초기 LED 불을 모두 깔끔하게 꺼두는 용도이다.
 
 ### 5-2. `HAL_GetTick()` 기반의 '상태 머신(State Machine)' 설계
 기존의 `HAL_Delay()`를 전면 배제하고, `HAL_GetTick()` 타이머를 기준으로 현재의 동작 상태(`current_mode`)만 집중 관리하는 형태로 루프를 업그레이드하였다. 이를 통해 모터가 돌아가고 있는 긴 시간 동안에도 사용자가 순간적으로 5개 중 다른 버튼을 누르면, **기다림이나 딜레이 없이 즉각적으로 모드가 전환**되는 압도적인 반응성을 확보하였다.
@@ -269,16 +276,19 @@ STM32CubeIDE 프로그램으로 돌아와 `main.c` 파일 내부 루프 안에 �
 또한, 기계식 버튼의 치명적 오류인 채터링(Chattering / Bouncing)을 극복하기 위해, 기존의 미세한 Delay 꼼수 대신 **200ms 타이머 비교 기반의 완벽한 소프트웨어 디바운스 논리**를 적용하였다.
 
 ```c
+    // 매 루프마다 최신 시간 캐싱
+    uint32_t now = HAL_GetTick();
+
     // 모든 버튼 입력 감지 및 모드 즉각 전환 (인터럽트형 논블로킹 제어)
     if (curr_btn[i] == GPIO_PIN_RESET && prev_btn[i] == GPIO_PIN_SET) { 
-        if (HAL_GetTick() - last_btn_time[i] > 200) { // 200ms 이내의 중복 입력 완벽 차단
+        if (now - last_btn_time[i] > 200) { // 200ms 이내의 중복 입력 완벽 차단
             if (current_mode == (i + 1)) {
-                current_mode = 0; // 도는 중 해당 버튼을 한 번 더 누르면 즉시 멈춤
+                current_mode = 0; // 도는 중 자기를 누르면 멈춤
             } else {
-                current_mode = i + 1; // 다른 버튼을 누르면 즉시 모드 교체
-                mode_start_time = HAL_GetTick();
+                current_mode = i + 1; // 다른 버튼을 누르면 즉시 그 모드로 시작
+                mode_start_time = now;
             }
-            last_btn_time[i] = HAL_GetTick(); // 현재 실행 시간 기록
+            last_btn_time[i] = now; // 현재 처리 시간 기록
         }
     }
 ```
@@ -288,7 +298,12 @@ STM32CubeIDE 프로그램으로 돌아와 `main.c` 파일 내부 루프 안에 �
 STM32CubeIDE 프로그램 `main.c` 내부의 초기화 영역과 무한 루프(`while (1)`) 영역에 작성된 최종 논블로킹 소스 코드는 다음과 같다.
 > [!NOTE]
 > * 모터 제어를 위한 **타이머(TIM2 PWM) 설정은 이전 [실험 1]과 동일**하게 유지한 상태를 가정합니다.
-> * 이 코드는 STM32CubeMX의 자동 코드 생성 주석인 `/* USER CODE BEGIN ... */` 및 `/* USER CODE END ... */` 블록 구조를 **정확히 반영**하고 있으므로, 코드의 주석 영역에 맞춰 내용을 복사/붙여넣기 하시면 향후 핀 설정을 추가로 수정하더라도 코드가 증발하는 불상사를 방지할 수 있습니다.
+> * 이 코드를 다른 프로젝트에 복사해 넣을 때는, `main.c` 파일 내에서 아래 **두 개의 영역을 찾아 정해진 구역 안에만 붙여넣기** 하셔야 합니다. 엉뚱한 위치에 복사하면 CubeMX에서 핀 설정을 바꾸고 코드를 재생성할 때 코드가 전부 지워지는 불상사가 생기므로 각별히 주의하시기 바랍니다.
+
+---
+
+**영역 1) `/* USER CODE BEGIN 2 */` 블록**
+이곳은 `main()` 함수 내부에서 `while (1)` 무한 루프가 시작되기 바로 직전의 공간으로, 각종 상태 전역 변수와 타이머를 초기화하는 구역입니다. 바로 이곳에 아래 코드를 복사해서 붙여넣습니다.
 
 ```c
   /* USER CODE BEGIN 2 */
@@ -303,13 +318,14 @@ STM32CubeIDE 프로그램 `main.c` 내부의 초기화 영역과 무한 루프(`
   uint32_t mode_start_time = 0; 
   uint32_t one_rotation_ms = 825; // 1바퀴 회전 튜닝 값
   /* USER CODE END 2 */
+```
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
+---
 
+**영역 2) `/* USER CODE BEGIN 3 */` 블록**
+이곳은 `while (1)` 즉 무한 루프 안쪽 영역으로, 실시간으로 버튼을 감지하고 모터를 돌리는 핵심 제어 구역입니다. 이 안에 아래의 통합 로직을 붙여넣습니다.
+
+```c
     /* USER CODE BEGIN 3 */
     uint32_t now = HAL_GetTick();
 
@@ -380,9 +396,7 @@ STM32CubeIDE 프로그램 `main.c` 내부의 초기화 영역과 무한 루프(`
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, led_states[2] ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, led_states[3] ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, led_states[4] ? GPIO_PIN_SET : GPIO_PIN_RESET);
-  }
   /* USER CODE END 3 */
-}
 ```
 
 ### 5-4. 최종 고찰
